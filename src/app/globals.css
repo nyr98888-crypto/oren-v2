@@ -32,3 +32,39 @@ select {
   scrollbar-width: thin;
   scrollbar-color: #334155 #0d1428;
 }
+
+@keyframes agent-status-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.55);
+  }
+  50% {
+    opacity: 0.85;
+    box-shadow: 0 0 0 8px rgba(34, 211, 238, 0);
+  }
+}
+
+@keyframes agent-dot-blink {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.75);
+    opacity: 0.55;
+  }
+}
+
+.agent-status-pill--busy {
+  animation: agent-status-pulse 1.4s ease-in-out infinite;
+}
+
+.agent-status-dot {
+  animation: agent-dot-blink 1s ease-in-out infinite;
+}
+
+.agent-thinking-bubble {
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.15);
+}

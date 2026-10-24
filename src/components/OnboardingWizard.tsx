@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { CheckCircle2, Rocket, Sparkles } from "lucide-react";
+import { SocialIcon } from "@/components/SocialIcons";
 import {
   BusinessProfile,
   DEFAULT_NETWORKS,
@@ -349,6 +350,7 @@ function NetworkRow({
           onChange={(e) => onToggle(e.target.checked)}
           className="h-5 w-5 accent-cyan-400"
         />
+        <SocialIcon platform={network.platform} size={22} />
         <span>
           <span className="block text-[15px] font-bold text-white">
             {networkLabel(network.platform)}

@@ -1,21 +1,7 @@
-import {
-  Facebook,
-  Instagram,
-  Linkedin,
-  MessageCircle,
-  Send,
-} from "lucide-react";
-import type { ConnectedAccount, Platform } from "@/types/social";
+import type { ConnectedAccount } from "@/types/social";
 import { accountTypeBadge, PLATFORM_LABELS } from "@/lib/labels";
 import { Badge } from "@/components/ui/Badge";
-
-const PLATFORM_ICONS: Record<Platform, typeof Facebook> = {
-  facebook: Facebook,
-  instagram: Instagram,
-  linkedin: Linkedin,
-  telegram: Send,
-  whatsapp: MessageCircle,
-};
+import { SocialIcon } from "@/components/SocialIcons";
 
 type AccountCardProps = {
   account: ConnectedAccount;
@@ -24,7 +10,6 @@ type AccountCardProps = {
 };
 
 export function AccountCard({ account, selected, onSelect }: AccountCardProps) {
-  const Icon = PLATFORM_ICONS[account.platform];
   const badge = accountTypeBadge(account.accountType);
 
   return (
@@ -38,8 +23,8 @@ export function AccountCard({ account, selected, onSelect }: AccountCardProps) {
       } ${!account.isConnected ? "opacity-60" : ""}`}
     >
       <div className="flex items-start gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-slate-50 text-slate-800">
-          <Icon className="h-5 w-5" aria-hidden />
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-slate-50">
+          <SocialIcon platform={account.platform} size={22} />
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-base font-bold text-slate-900">

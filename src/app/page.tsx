@@ -3,25 +3,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import {
-  AtSign,
   Copy,
-  Facebook,
-  Instagram,
-  Linkedin,
   Loader2,
-  MessageCircle,
   Mic,
-  Music2,
-  Pin,
   Rocket,
   Send,
   Share2,
   Sparkles,
-  Twitter,
-  Youtube,
   Zap,
 } from "lucide-react";
 import { OnboardingWizard } from "@/components/OnboardingWizard";
+import { PerformanceAdvisor } from "@/components/PerformanceAdvisor";
+import { SocialIcon } from "@/components/SocialIcons";
+import { CalendarView } from "@/components/CalendarView";
+import { CreativeStudio } from "@/components/CreativeStudio";
+import { LeadsCrm } from "@/components/LeadsCrm";
+import { BusinessSettings } from "@/components/BusinessSettings";
 import {
   accountsFromProfile,
   welcomeMessage,
@@ -32,10 +29,36 @@ import {
   BusinessProfile,
   clearProfile,
   loadProfile,
-  toWhatsAppLink,
 } from "@/lib/profile";
+import { getPlatformTipForTab } from "@/lib/platform-rules";
+import {
+  buildDemoCalendarEvents,
+  loadCalendarEvents,
+  saveCalendarEvents,
+} from "@/lib/calendarStore";
+import {
+  buildTrackedWhatsAppLink,
+  resolveAnalyticsPlatformId,
+  trackEvent,
+} from "@/lib/tracking";
+import type { AICampaignResponse, CalendarEvent } from "@/types/campaign";
 
-type NavId = "agent" | "calendar" | "studio" | "crm" | "settings";
+const THINKING_PHRASES = [
+  "מנסח…",
+  "מתאים לרשתות…",
+  "בודק עובדות…",
+  "מכין ליומן…",
+  "הסוכן חושב…",
+] as const;
+
+/** Primary app views — analytics kept so PerformanceAdvisor stays reachable */
+type ActiveView =
+  | "workspace"
+  | "analytics"
+  | "calendar"
+  | "studio"
+  | "crm"
+  | "settings";
 
 type ChatMessage = {
   id: string;
@@ -52,29 +75,26 @@ type PostVariant = {
   ctaLabel: string;
 };
 
-const NAV_ITEMS: { id: NavId; label: string }[] = [
-  { id: "agent", label: "💬 שיחה עם הסוכן" },
+const NAV_ITEMS: { id: ActiveView; label: string }[] = [
+  { id: "workspace", label: "💬 שיחה עם הסוכן" },
+  { id: "analytics", label: "📊 יועץ שיווק חכם" },
   { id: "calendar", label: "📅 יומן אירועים ותזכורות" },
   { id: "studio", label: "🎨 סטודיו תמונות ווידאו" },
   { id: "crm", label: "👥 ניהול פניות CRM" },
   { id: "settings", label: "⚙️ הגדרות עסק" },
 ];
 
-const PLATFORM_TABS: {
-  id: DashboardPlatform;
-  label: string;
-  icon: typeof Instagram;
-}[] = [
-  { id: "instagram", label: "אינסטגרם", icon: Instagram },
-  { id: "facebook", label: "פייסבוק", icon: Facebook },
-  { id: "tiktok", label: "טיקטוק", icon: Music2 },
-  { id: "youtube", label: "יוטיוב", icon: Youtube },
-  { id: "whatsapp", label: "וואטסאפ", icon: MessageCircle },
-  { id: "telegram", label: "טלגרם", icon: Send },
-  { id: "linkedin", label: "לינקדאין", icon: Linkedin },
-  { id: "x", label: "X", icon: Twitter },
-  { id: "threads", label: "Threads", icon: AtSign },
-  { id: "pinterest", label: "פינטרסט", icon: Pin },
+const PLATFORM_TABS: { id: DashboardPlatform; label: string }[] = [
+  { id: "instagram", label: "אינסטגרם" },
+  { id: "facebook", label: "פייסבוק" },
+  { id: "tiktok", label: "טיקטוק" },
+  { id: "youtube", label: "יוטיוב" },
+  { id: "whatsapp", label: "וואטסאפ" },
+  { id: "telegram", label: "טלגרם" },
+  { id: "linkedin", label: "לינקדאין" },
+  { id: "x", label: "X" },
+  { id: "threads", label: "Threads" },
+  { id: "pinterest", label: "פינטרסט" },
 ];
 
 const MEDIA =
@@ -131,19 +151,6 @@ function buildVariants(businessName: string): Record<DashboardPlatform, PostVari
   };
 }
 
-const PLATFORM_ICON: Record<DashboardPlatform, typeof Facebook> = {
-  facebook: Facebook,
-  instagram: Instagram,
-  whatsapp: MessageCircle,
-  telegram: Send,
-  linkedin: Linkedin,
-  tiktok: Music2,
-  youtube: Youtube,
-  x: Twitter,
-  threads: AtSign,
-  pinterest: Pin,
-};
-
 const SHARE_URLS: Record<DashboardPlatform, (caption: string) => string> = {
   whatsapp: (c) => `https://wa.me/?text=${encodeURIComponent(c)}`,
   telegram: (c) => `https://t.me/share/url?text=${encodeURIComponent(c)}`,
@@ -197,6 +204,7 @@ export default function HomePage() {
   return (
     <Dashboard
       profile={profile}
+      onProfileChange={setProfile}
       onResetProfile={() => {
         clearProfile();
         setProfile(null);
@@ -207,9 +215,11 @@ export default function HomePage() {
 
 function Dashboard({
   profile,
+  onProfileChange,
   onResetProfile,
 }: {
   profile: BusinessProfile;
+  onProfileChange: (next: BusinessProfile) => void;
   onResetProfile: () => void;
 }) {
   const accounts = useMemo(() => accountsFromProfile(profile), [profile]);
@@ -217,15 +227,11 @@ function Dashboard({
     () => buildVariants(profile.businessName),
     [profile.businessName]
   );
-  const waLink = useMemo(
-    () => toWhatsAppLink(profile.whatsapp),
-    [profile.whatsapp]
-  );
-
   const [activeTab, setActiveTab] = useState<DashboardPlatform>(
     accounts[0]?.platform ?? "instagram"
   );
-  const [activeNav, setActiveNav] = useState<NavId>("agent");
+  const [activeView, setActiveView] = useState<ActiveView>("workspace");
+  const [analyticsRefresh, setAnalyticsRefresh] = useState(0);
   const [selectedAccountId, setSelectedAccountId] = useState(
     accounts[0]?.id ?? ""
   );
@@ -241,7 +247,35 @@ function Dashboard({
   const [input, setInput] = useState("");
   const [statusNote, setStatusNote] = useState<string | null>(null);
   const [isThinking, setIsThinking] = useState(false);
+  const [thinkingPhraseIdx, setThinkingPhraseIdx] = useState(0);
+  const [lastCampaign, setLastCampaign] = useState<AICampaignResponse | null>(
+    null
+  );
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const feedRef = useRef<HTMLDivElement>(null);
+  const pendingPromptRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const loaded = loadCalendarEvents();
+    if (loaded.length === 0) {
+      const demo = buildDemoCalendarEvents();
+      setCalendarEvents(demo);
+      saveCalendarEvents(demo);
+    } else {
+      setCalendarEvents(loaded);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isThinking) {
+      setThinkingPhraseIdx(0);
+      return;
+    }
+    const id = window.setInterval(() => {
+      setThinkingPhraseIdx((i) => (i + 1) % THINKING_PHRASES.length);
+    }, 1200);
+    return () => window.clearInterval(id);
+  }, [isThinking]);
 
   const selectedAccount = useMemo(
     () => accounts.find((a) => a.id === selectedAccountId) ?? accounts[0],
@@ -259,6 +293,30 @@ function Dashboard({
     previewAccount.kind === "business" ||
     previewAccount.kind === "creator";
 
+  const platformTip = useMemo(
+    () => getPlatformTipForTab(activeTab, previewAccount?.kind),
+    [activeTab, previewAccount?.kind]
+  );
+
+  const analyticsPlatformId = resolveAnalyticsPlatformId(
+    activeTab,
+    previewAccount?.kind
+  );
+
+  const trackedWaLink = useMemo(
+    () =>
+      buildTrackedWhatsAppLink(
+        profile.whatsapp,
+        `שלום, הגעתי לגבי ${profile.businessName}`,
+        analyticsPlatformId
+      ),
+    [profile.whatsapp, profile.businessName, analyticsPlatformId]
+  );
+
+  function bumpAnalytics() {
+    setAnalyticsRefresh((n) => n + 1);
+  }
+
   function flash(note: string) {
     setStatusNote(note);
     window.setTimeout(() => setStatusNote(null), 2800);
@@ -273,8 +331,37 @@ function Dashboard({
     });
   }
 
-  async function handleSend() {
-    const text = input.trim();
+  function goBackToWorkspace() {
+    setActiveView("workspace");
+  }
+
+  function scheduleWithAgent(prompt: string) {
+    pendingPromptRef.current = prompt;
+    setActiveView("workspace");
+    setInput(prompt);
+    window.setTimeout(() => {
+      const pending = pendingPromptRef.current;
+      if (pending) {
+        pendingPromptRef.current = null;
+        void handleSend(pending);
+      }
+    }, 80);
+  }
+
+  function addCalendarEvent(event: Omit<CalendarEvent, "id">) {
+    const next: CalendarEvent = {
+      ...event,
+      id: `ev-${Date.now()}`,
+    };
+    setCalendarEvents((prev) => {
+      const updated = [...prev, next];
+      saveCalendarEvents(updated);
+      return updated;
+    });
+  }
+
+  async function handleSend(overrideText?: string) {
+    const text = (overrideText ?? input).trim();
     if (!text || isThinking) return;
 
     const userMsg: ChatMessage = {
@@ -298,10 +385,27 @@ function Dashboard({
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: historyForApi, profile }),
+        body: JSON.stringify({
+          messages: historyForApi,
+          profile,
+          calendarEvents,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "שגיאה מהשרת");
+
+      if (data.campaign) {
+        setLastCampaign(data.campaign as AICampaignResponse);
+        const camp = data.campaign as AICampaignResponse;
+        if (camp.suggestedScheduleDate && camp.campaignTitle) {
+          addCalendarEvent({
+            title: camp.campaignTitle,
+            datetime: camp.suggestedScheduleDate,
+            note: camp.calendarEventNote || "קמפיין מהסוכן",
+            source: "ai",
+          });
+        }
+      }
 
       setSampleMessages((prev) => [
         ...prev,
@@ -325,7 +429,7 @@ function Dashboard({
         {
           id: `a-err-${Date.now()}`,
           role: "agent",
-          content: `לא הצלחתי לקבל תשובה מ־OpenRouter.\n${message}`,
+          content: `לא הצלחתי לקבל תשובה מהסוכן כרגע.\n${message}`,
           time: nowHe(),
         },
       ]);
@@ -344,12 +448,20 @@ function Dashboard({
     } catch {
       /* ignore */
     }
+    trackEvent(analyticsPlatformId, "link_click", "one_click_share");
+    bumpAnalytics();
     flash("הטקסט הועתק — פתחנו חלון לשיתוף מיידי");
     window.open(
       SHARE_URLS[activeTab](variant.caption),
       "_blank",
       "noopener,noreferrer"
     );
+  }
+
+  function handleWhatsAppCtaClick() {
+    trackEvent(analyticsPlatformId, "link_click", "preview_cta");
+    trackEvent(analyticsPlatformId, "whatsapp_lead", "preview_cta");
+    bumpAnalytics();
   }
 
   return (
@@ -451,20 +563,36 @@ function Dashboard({
         </aside>
 
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden border-l border-blue-900/60 bg-[#0a0f1d]">
-          <div className="flex items-center gap-3 border-b border-blue-900/60 bg-[#111a33] px-5 py-3">
+          <div className="flex flex-wrap items-center gap-3 border-b border-blue-900/60 bg-[#111a33] px-5 py-3">
             <h2 className="text-xl font-bold text-white">
               סוכן השיווק החכם שלך
             </h2>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/50 bg-emerald-500/20 px-2.5 py-1 text-sm font-semibold text-emerald-300">
+            {isThinking ? (
               <span
-                className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
-                aria-hidden
-              />
-              OpenRouter פעיל
-            </span>
+                className="agent-status-pill agent-status-pill--busy inline-flex items-center gap-1.5 rounded-full border border-cyan-400/60 bg-cyan-500/15 px-2.5 py-1 text-sm font-semibold text-cyan-200"
+                role="status"
+                aria-live="polite"
+              >
+                <span
+                  className="agent-status-dot h-2.5 w-2.5 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.9)]"
+                  aria-hidden
+                />
+                {THINKING_PHRASES[thinkingPhraseIdx]}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/50 bg-emerald-500/20 px-2.5 py-1 text-sm font-semibold text-emerald-300">
+                <span
+                  className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                  aria-hidden
+                />
+                מוכן · פעיל
+              </span>
+            )}
           </div>
 
-          {activeNav !== "agent" ? (
+          {activeNav === "analytics" ? (
+            <PerformanceAdvisor refreshKey={analyticsRefresh} />
+          ) : activeNav !== "agent" ? (
             <div className="flex flex-1 items-center justify-center p-8 text-center">
               <div className="max-w-md rounded-xl border border-blue-900/60 bg-[#111a33] p-6 shadow-lg">
                 <p className="text-lg font-bold text-white">
@@ -536,9 +664,9 @@ function Dashboard({
                 ))}
                 {isThinking && (
                   <div className="flex justify-end">
-                    <div className="inline-flex items-center gap-2 rounded-2xl border border-blue-800/50 bg-[#182344] px-4 py-3 text-blue-200">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      הסוכן חושב…
+                    <div className="agent-thinking-bubble inline-flex items-center gap-2 rounded-2xl border border-cyan-500/40 bg-[#182344] px-4 py-3 text-cyan-100 animate-pulse">
+                      <Loader2 className="h-5 w-5 animate-spin text-cyan-300" />
+                      <span>{THINKING_PHRASES[thinkingPhraseIdx]}</span>
                     </div>
                   </div>
                 )}
@@ -606,7 +734,7 @@ function Dashboard({
             role="tablist"
             aria-label="רשתות"
           >
-            {PLATFORM_TABS.map(({ id, label, icon: Icon }) => {
+            {PLATFORM_TABS.map(({ id, label }) => {
               const selected = activeTab === id;
               return (
                 <button
@@ -621,12 +749,24 @@ function Dashboard({
                       : "border-blue-900/60 bg-[#0d1428] text-blue-200 hover:bg-[#182344] hover:text-white"
                   }`}
                 >
-                  <Icon className="h-4 w-4" aria-hidden />
+                  <SocialIcon platform={id} size={16} />
                   {label}
                 </button>
               );
             })}
           </div>
+
+          {platformTip && (
+            <div
+              className="mb-3 rounded-lg border border-cyan-400/25 bg-[#0d1428] px-3 py-2 text-xs leading-relaxed text-blue-100"
+              role="status"
+            >
+              <span className="font-bold text-cyan-300">טיפ פלטפורמה · </span>
+              <span>{platformTip.optimalLength}</span>
+              <span className="text-blue-400"> · </span>
+              <span className="text-blue-200">טון: {platformTip.bestTone}</span>
+            </div>
+          )}
 
           <article className="overflow-hidden rounded-xl border border-blue-900/60 bg-[#182344] shadow-lg">
             <div className="flex items-center gap-3 border-b border-blue-800/50 p-3">
@@ -665,9 +805,10 @@ function Dashboard({
                 </p>
               )}
               <a
-                href={waLink}
+                href={trackedWaLink}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={handleWhatsAppCtaClick}
                 className="inline-flex min-h-12 items-center justify-center rounded-lg bg-emerald-600 px-4 text-[15px] font-bold text-white shadow-lg shadow-emerald-900/30 hover:bg-emerald-500"
               >
                 {variant.ctaLabel}
@@ -683,9 +824,11 @@ function Dashboard({
                 </p>
                 <button
                   type="button"
-                  onClick={() =>
-                    flash("הפוסט תוזמן לפרסום אוטומטי (סימולציה)")
-                  }
+                  onClick={() => {
+                    trackEvent(analyticsPlatformId, "view", "schedule_publish");
+                    bumpAnalytics();
+                    flash("הפוסט תוזמן לפרסום אוטומטי (סימולציה)");
+                  }}
                   className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-base font-bold text-white shadow-lg shadow-emerald-900/30 hover:bg-emerald-500"
                 >
                   <Rocket className="h-5 w-5" aria-hidden />
@@ -739,7 +882,6 @@ function AccountButton({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const Icon = PLATFORM_ICON[account.platform];
   return (
     <button
       type="button"
@@ -751,8 +893,8 @@ function AccountButton({
       }`}
     >
       <div className="flex items-center gap-2">
-        <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-500/10 text-cyan-300">
-          <Icon className="h-5 w-5" aria-hidden />
+        <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-500/10">
+          <SocialIcon platform={account.platform} size={20} />
         </span>
         <span className="text-[15px] font-bold text-white">{account.name}</span>
       </div>

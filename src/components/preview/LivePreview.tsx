@@ -8,6 +8,7 @@ import type {
 } from "@/types/social";
 import { PLATFORM_LABELS } from "@/lib/labels";
 import { DistributionActions } from "@/components/preview/DistributionActions";
+import { SocialIcon } from "@/components/SocialIcons";
 
 const TABS: Platform[] = [
   "facebook",
@@ -59,12 +60,13 @@ export function LivePreview({
               role="tab"
               aria-selected={selected}
               onClick={() => onPlatformChange(platform)}
-              className={`min-h-touch shrink-0 rounded-lg border px-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-600 ${
+              className={`inline-flex min-h-touch shrink-0 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-600 ${
                 selected
                   ? "border-blue-600 bg-blue-50 text-slate-900"
                   : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50"
               }`}
             >
+              <SocialIcon platform={platform} size={16} />
               {PLATFORM_LABELS[platform]}
             </button>
           );

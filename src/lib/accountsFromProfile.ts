@@ -54,7 +54,7 @@ function badgeFor(mode: NetworkMode, platform: OnboardingPlatformId): {
   }
   if (mode === "creator") {
     return {
-      badge: "Creator – פרסום ישיר",
+      badge: "יוצר – פרסום ישיר",
       badgeClass: BADGE_BUSINESS,
     };
   }
@@ -78,11 +78,11 @@ function accountTitle(
   if (platform === "instagram") {
     return mode === "personal"
       ? `${label} חשבון פרטי`
-      : `${label} Creator`;
+      : `${label} חשבון יוצר`;
   }
   if (platform === "whatsapp") return `${label} עסקי`;
   if (platform === "telegram") return `${label} ערוץ`;
-  if (platform === "tiktok") return `${label} Creator`;
+  if (platform === "tiktok") return `${label} חשבון יוצר`;
   return `${label} · ${profile.businessName}`;
 }
 
@@ -106,6 +106,6 @@ export function accountsFromProfile(
     });
 }
 
-export function welcomeMessage(businessName: string): string {
-  return `ברוך הבא ל־${businessName}! אני מוכן. על איזה מבצע או מוצר תרצה שנכין פוסט ראשון היום?`;
+export function welcomeMessage(_businessName?: string): string {
+  return "שלום! אני סוכן השיווק שלך. אני כאן כדי לנסח פוסטים, לתזמן קמפיינים ולנתח עבורך תוצאות. מה נרצה לקדם היום?";
 }

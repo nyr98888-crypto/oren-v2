@@ -60,7 +60,7 @@ export function DistributionActions({
     return (
       <div className="space-y-3 border-t border-slate-300 bg-white p-4">
         <p className="text-base font-bold text-emerald-900">
-          חשבון עסקי/יוצר: פרסום ישיר דרך API
+          חשבון עסקי/יוצר: פרסום אוטומטי ישיר
         </p>
         <label className="block text-sm font-semibold text-slate-800">
           תאריך ושעה
@@ -95,7 +95,7 @@ export function DistributionActions({
       </p>
       <Button variant="amber" fullWidth onClick={handleOneClickShare}>
         <Share2 className="h-5 w-5" aria-hidden />
-        שיתוף מהיר (1-Click Share)
+        שיתוף מהיר בלחיצה אחת
       </Button>
       <Button
         variant="secondary"
