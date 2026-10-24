@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import {
   ArrowRight,
   Clapperboard,
@@ -54,7 +54,7 @@ export function CreativeStudio({
     flash(`הועלה: ${file.name}`);
   }
 
-  const tabs: { id: StudioTab; label: string; icon: React.ReactNode }[] = [
+  const tabs: { id: StudioTab; label: string; icon: ReactNode }[] = [
     {
       id: "profile",
       label: "תמונת פרופיל ובאנר",
@@ -335,7 +335,7 @@ function ActionBtn({
 }: {
   label: string;
   onClick: () => void;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
 }) {
   return (
     <button

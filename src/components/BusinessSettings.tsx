@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { ArrowRight, Save, RotateCcw } from "lucide-react";
 import type { BusinessProfile } from "@/lib/profile";
 import { saveProfile } from "@/lib/profile";
@@ -32,7 +32,7 @@ export function BusinessSettings({
     window.setTimeout(() => setToast(null), 2600);
   }
 
-  function handleSave(e: React.FormEvent) {
+  function handleSave(e: FormEvent) {
     e.preventDefault();
     const next: BusinessProfile = {
       ...profile,

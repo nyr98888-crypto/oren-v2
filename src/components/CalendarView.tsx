@@ -61,7 +61,6 @@ export function CalendarView({
 
   const cells = useMemo(() => {
     const first = startOfMonth(cursor);
-    const startPad = (first.getDay() + 6) % 7; // week starts Sunday in HE UI — keep Sun=0
     const pad = first.getDay(); // Sunday first
     const daysInMonth = new Date(
       cursor.getFullYear(),
@@ -74,7 +73,6 @@ export function CalendarView({
       grid.push(new Date(cursor.getFullYear(), cursor.getMonth(), day));
     }
     while (grid.length % 7 !== 0) grid.push(null);
-    void startPad;
     return grid;
   }, [cursor]);
 

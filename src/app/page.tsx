@@ -543,12 +543,12 @@ function Dashboard({
           </h2>
           <nav className="space-y-1" aria-label="ניווט ראשי">
             {NAV_ITEMS.map((item) => {
-              const active = activeNav === item.id;
+              const active = activeView === item.id;
               return (
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setActiveNav(item.id)}
+                  onClick={() => setActiveView(item.id)}
                   className={`flex min-h-12 w-full items-center rounded-xl border px-3 text-right text-[15px] font-semibold text-white transition focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
                     active
                       ? "border-cyan-400/50 bg-blue-600/40"
@@ -562,10 +562,58 @@ function Dashboard({
           </nav>
         </aside>
 
+        {activeView !== "workspace" ? (
+          <main className="flex min-w-0 flex-1 flex-col overflow-hidden border-l border-blue-900/60 bg-[#0a0f1d]">
+            {activeView === "analytics" && (
+              <div className="flex h-full flex-col overflow-hidden">
+                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-blue-900/60 bg-[#111a33] px-5 py-3">
+                  <h2 className="text-xl font-bold text-white">
+                    יועץ שיווק חכם
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={goBackToWorkspace}
+                    className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-cyan-400/40 bg-[#0d1428] px-4 text-[15px] font-bold text-white hover:bg-blue-800/80"
+                  >
+                    ← חזור ללוח הראשי ולסוכן
+                  </button>
+                </div>
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                  <PerformanceAdvisor refreshKey={analyticsRefresh} />
+                </div>
+              </div>
+            )}
+            {activeView === "calendar" && (
+              <CalendarView
+                events={calendarEvents}
+                onAddSpecialEvent={addCalendarEvent}
+                onBack={goBackToWorkspace}
+                onScheduleWithAgent={scheduleWithAgent}
+              />
+            )}
+            {activeView === "studio" && (
+              <CreativeStudio
+                campaign={lastCampaign}
+                onBack={goBackToWorkspace}
+                onMockAction={flash}
+              />
+            )}
+            {activeView === "crm" && <LeadsCrm onBack={goBackToWorkspace} />}
+            {activeView === "settings" && (
+              <BusinessSettings
+                profile={profile}
+                onProfileChange={onProfileChange}
+                onResetOnboarding={onResetProfile}
+                onBack={goBackToWorkspace}
+              />
+            )}
+          </main>
+        ) : (
+          <>
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden border-l border-blue-900/60 bg-[#0a0f1d]">
           <div className="flex flex-wrap items-center gap-3 border-b border-blue-900/60 bg-[#111a33] px-5 py-3">
             <h2 className="text-xl font-bold text-white">
-              סוכן השיווק החכם שלך
+              סוכן השיווק האישי של העסק
             </h2>
             {isThinking ? (
               <span
@@ -582,35 +630,14 @@ function Dashboard({
             ) : (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/50 bg-emerald-500/20 px-2.5 py-1 text-sm font-semibold text-emerald-300">
                 <span
-                  className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                  className="h-2.5 w-2.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
                   aria-hidden
                 />
-                מוכן · פעיל
+                הסוכן פעיל ומוכן לפקודה
               </span>
             )}
           </div>
 
-          {activeNav === "analytics" ? (
-            <PerformanceAdvisor refreshKey={analyticsRefresh} />
-          ) : activeNav !== "agent" ? (
-            <div className="flex flex-1 items-center justify-center p-8 text-center">
-              <div className="max-w-md rounded-xl border border-blue-900/60 bg-[#111a33] p-6 shadow-lg">
-                <p className="text-lg font-bold text-white">
-                  {NAV_ITEMS.find((n) => n.id === activeNav)?.label}
-                </p>
-                <p className="mt-2 text-[15px] text-blue-200">
-                  המסך הזה יתמלא בגרסה הבאה. בינתיים חזרו לשיחה עם הסוכן.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setActiveNav("agent")}
-                  className="mt-4 min-h-12 rounded-lg bg-blue-600 px-4 text-[15px] font-bold text-white shadow-lg hover:bg-blue-500"
-                >
-                  חזרה לשיחה עם הסוכן
-                </button>
-              </div>
-            </div>
-          ) : (
             <>
               <div
                 ref={feedRef}
@@ -721,12 +748,11 @@ function Dashboard({
                 </button>
               </form>
             </>
-          )}
         </main>
 
         <aside className="flex w-[420px] shrink-0 flex-col overflow-y-auto border-r border-blue-900/60 bg-[#111a33] p-4 shadow-lg">
           <h2 className="mb-3 text-lg font-bold text-white">
-            תצוגה מקדימה חיה (Live Preview)
+            תצוגה מקדימה חיה
           </h2>
 
           <div
@@ -820,7 +846,7 @@ function Dashboard({
             {isDirectPublish ? (
               <div className="rounded-xl border border-emerald-500/50 bg-emerald-500/10 p-4 shadow-lg">
                 <p className="mb-3 text-[15px] font-bold text-emerald-300">
-                  חשבון עסקי/Creator — פרסום ישיר דרך API
+                  חשבון עסקי/יוצר — פרסום אוטומטי ישיר
                 </p>
                 <button
                   type="button"
@@ -839,7 +865,7 @@ function Dashboard({
               <div className="rounded-xl border border-amber-500/50 bg-amber-500/15 p-4 shadow-lg">
                 <p className="mb-1 flex items-center gap-1 text-[15px] font-bold text-amber-300">
                   <Zap className="h-5 w-5" aria-hidden />
-                  חשבון פרטי: 1-Click Share
+                  חשבון פרטי: שיתוף מהיר בלחיצה אחת
                 </p>
                 <button
                   type="button"
@@ -847,7 +873,7 @@ function Dashboard({
                   className="mt-2 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 text-base font-bold text-slate-950 shadow-lg shadow-amber-900/30 hover:bg-amber-400"
                 >
                   <Share2 className="h-5 w-5" aria-hidden />
-                  1-Click Share: העתק טקסט ופתח אפליקציה לשיתוף
+                  העתק טקסט ופתח אפליקציה לשיתוף
                 </button>
                 <button
                   type="button"
@@ -868,6 +894,8 @@ function Dashboard({
             )}
           </div>
         </aside>
+          </>
+        )}
       </div>
     </div>
   );
