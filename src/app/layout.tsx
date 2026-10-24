@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Heebo } from "next/font/google";
 import "./globals.css";
 
@@ -13,6 +13,12 @@ export const metadata: Metadata = {
   title: "SocialAI Pro – ניהול סושיאל ופרסום חכם",
   description:
     "דשבורד שיווק ברשתות לעסקים קטנים — פרסום אוטומטי לחשבונות עסקיים ושיתוף מהיר לפרטיים",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

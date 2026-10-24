@@ -13,6 +13,10 @@ const config: Config = {
       },
       minHeight: {
         touch: "48px",
+        dvh: "100dvh",
+      },
+      height: {
+        dvh: "100dvh",
       },
       minWidth: {
         touch: "48px",

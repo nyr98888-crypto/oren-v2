@@ -68,3 +68,12 @@ select {
 .agent-thinking-bubble {
   box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.15);
 }
+
+/* iOS / notched devices — keep bottom chrome above the home indicator */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}

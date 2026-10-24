@@ -19,6 +19,7 @@ import { CalendarView } from "@/components/CalendarView";
 import { CreativeStudio } from "@/components/CreativeStudio";
 import { LeadsCrm } from "@/components/LeadsCrm";
 import { BusinessSettings } from "@/components/BusinessSettings";
+import { MobileShell } from "@/components/mobile/MobileShell";
 import {
   accountsFromProfile,
   welcomeMessage,
@@ -41,6 +42,7 @@ import {
   resolveAnalyticsPlatformId,
   trackEvent,
 } from "@/lib/tracking";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import type { AICampaignResponse, CalendarEvent } from "@/types/campaign";
 
 const THINKING_PHRASES = [
@@ -222,6 +224,7 @@ function Dashboard({
   onProfileChange: (next: BusinessProfile) => void;
   onResetProfile: () => void;
 }) {
+  const isMobile = useIsMobile();
   const accounts = useMemo(() => accountsFromProfile(profile), [profile]);
   const variants = useMemo(
     () => buildVariants(profile.businessName),
@@ -462,6 +465,64 @@ function Dashboard({
     trackEvent(analyticsPlatformId, "link_click", "preview_cta");
     trackEvent(analyticsPlatformId, "whatsapp_lead", "preview_cta");
     bumpAnalytics();
+  }
+
+  if (isMobile) {
+    return (
+      <MobileShell
+        profile={profile}
+        accounts={accounts}
+        selectedAccountId={selectedAccountId}
+        onSelectAccount={(account) => {
+          setSelectedAccountId(account.id);
+          setActiveTab(account.platform);
+        }}
+        activeView={activeView}
+        onActiveViewChange={setActiveView}
+        messages={sampleMessages}
+        input={input}
+        onInputChange={setInput}
+        onSend={(text) => void handleSend(text)}
+        isThinking={isThinking}
+        thinkingPhrase={THINKING_PHRASES[thinkingPhraseIdx]}
+        statusNote={statusNote}
+        onFlash={flash}
+        onActionClick={(action) => {
+          flash(`בוצע: ${action}`);
+          setInput(action);
+        }}
+        activeTab={activeTab}
+        onActiveTabChange={setActiveTab}
+        platformTabs={PLATFORM_TABS}
+        platformTip={platformTip}
+        previewAccount={previewAccount}
+        variant={variant}
+        trackedWaLink={trackedWaLink}
+        isDirectPublish={isDirectPublish}
+        onWhatsAppCtaClick={handleWhatsAppCtaClick}
+        onOneClickShare={() => void handleOneClickShare()}
+        onSchedulePublish={() => {
+          trackEvent(analyticsPlatformId, "view", "schedule_publish");
+          bumpAnalytics();
+          flash("הפוסט תוזמן לפרסום אוטומטי (סימולציה)");
+        }}
+        onCopyCaption={async () => {
+          try {
+            await navigator.clipboard.writeText(variant.caption);
+            flash("הטקסט הועתק ללוח");
+          } catch {
+            flash("העתקה נחסמה");
+          }
+        }}
+        calendarEvents={calendarEvents}
+        onAddCalendarEvent={addCalendarEvent}
+        onScheduleWithAgent={scheduleWithAgent}
+        lastCampaign={lastCampaign}
+        analyticsRefresh={analyticsRefresh}
+        onProfileChange={onProfileChange}
+        onResetProfile={onResetProfile}
+      />
+    );
   }
 
   return (

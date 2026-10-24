@@ -125,9 +125,9 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
     return (
       <div
         dir="rtl"
-        className="flex min-h-screen w-full items-center justify-center bg-[#0a0f1d] p-6 text-white"
+        className="flex h-full min-h-0 w-full items-center justify-center overflow-y-auto bg-[#0a0f1d] p-6 pb-safe text-white"
       >
-        <div className="w-full max-w-xl rounded-2xl border border-emerald-500/40 bg-[#111a33] p-8 text-center shadow-2xl">
+        <div className="w-full max-w-xl rounded-2xl border border-emerald-500/40 bg-[#111a33] p-6 shadow-2xl sm:p-8 text-center">
           <CheckCircle2 className="mx-auto h-14 w-14 text-emerald-400" />
           <p className="mt-4 text-lg font-bold leading-relaxed text-white">
             מעולה! הפרופיל מוכן. כל דרכי ההתקשרות מסונכרנות. מעביר אותך לפאנל
@@ -144,9 +144,9 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   return (
     <div
       dir="rtl"
-      className="flex min-h-screen w-full items-center justify-center bg-[#0a0f1d] p-6 text-white"
+      className="flex h-full min-h-0 w-full items-start justify-center overflow-y-auto overscroll-contain bg-[#0a0f1d] p-4 pb-safe pt-safe text-white sm:items-center sm:p-6"
     >
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-blue-800/60 bg-[#111a33] p-8 shadow-2xl">
+      <div className="relative my-4 w-full max-w-2xl overflow-hidden rounded-2xl border border-blue-800/60 bg-[#111a33] p-5 shadow-2xl sm:my-0 sm:p-8">
         <div className="pointer-events-none absolute -left-16 -top-16 h-40 w-40 rounded-full bg-cyan-500/10 blur-3xl" />
 
         <div className="relative mb-6">
